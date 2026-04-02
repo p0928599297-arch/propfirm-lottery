@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROPFIRM 帳號抽獎</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f12;
+    --surface: #161a20;
+    --surface2: #1e232b;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f2f5;
+    --muted: #7a8394;
+    --accent: #4fffb0;
+    --accent-dim: rgba(79,255,176,0.12);
+    --accent-dark: #00c97a;
+    --danger: #ff5757;
+    --danger-dim: rgba(255,87,87,0.1);
+    --gold: #ffd166;
+    --gold-dim: rgba(255,209,102,0.12);
+    --mono: 'Space Mono', monospace;
+    --sans: 'Noto Sans TC', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0 0 4rem;
+  }
+
+  /* Header */
+  .top-bar {
+    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(13,15,18,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 10;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    color: var(--accent);
+  }
+  .logo span { color: var(--muted); font-weight: 400; }
+  .date-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 99px;
+    padding: 4px 12px;
+  }
+
+  .page { max-width: 640px; margin: 0 auto; padding: 2rem 1.25rem 0; }
+
+  /* Hero */
+  .hero { text-align: center; margin-bottom: 2.5rem; }
+  .hero h1 {
+    font-family: var(--mono);
+    font-size: clamp(28px, 6vw, 42px);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: .5rem;
+  }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { font-size: 13px; color: var(--muted); }
+
+  /* Quota */
+  .quota-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: .9rem 1rem;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .stat-val.accent { color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 5px; letter-spacing: .05em; }
+  .prog-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .prog-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .prog-row span { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .prog-track {
+    background: var(--surface2);
+    border-radius: 99px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .prog-fill {
+    height: 8px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+    transition: width .4s cubic-bezier(.4,0,.2,1);
+    width: 0%;
+  }
+
+  /* Winner banner */
+  .winner-banner {
+    display: none;
+    background: var(--gold-dim);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    animation: pop .4s ease;
+  }
+  @keyframes pop { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .winner-banner .label { font-size: 11px; color: var(--gold); letter-spacing: .1em; font-family: var(--mono); margin-bottom: 6px; }
+  .winner-banner .wname { font-size: 22px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+  .winner-banner .wnum { font-size: 13px; color: rgba(255,209,102,.7); font-family: var(--mono); }
+
+  /* Form */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .form-card h2 { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: .06em; margin-bottom: 12px; font-family: var(--mono); }
+  .input-row { display: flex; gap: 8px; }
+  .input-row input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--sans);
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .input-row input:focus { border-color: var(--accent); }
+  .input-row input::placeholder { color: var(--muted); }
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--mono);
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: .15s;
+    white-space: nowrap;
+  }
+  .btn-accent { background: var(--accent); color: #0d0f12; }
+  .btn-accent:hover { background: #6fffbf; transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+  .btn-ghost:hover { border-color: var(--border2); background: var(--surface); }
+  .btn-red { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,87,87,.25); }
+  .btn-red:hover { background: rgba(255,87,87,.2); }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  /* List */
+  .list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .list-header span { font-size: 11px; color: var(--muted); font-family: var(--mono); letter-spacing: .06em; }
+  .entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: .8rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    transition: border-color .2s;
+    animation: slideIn .25s ease;
+  }
+  @keyframes slideIn { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .entry.is-winner { border-color: var(--gold); background: var(--gold-dim); }
+  .num-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .entry.is-winner .num-box { color: var(--gold); border-color: rgba(255,209,102,.3); background: rgba(255,209,102,.08); }
+  .entry-info { flex: 1; min-width: 0; }
+  .entry-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .entry-time { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+  .badge {
+    font-size: 11px;
+    font-family: var(--mono);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .badge-rank { background: var(--surface2); color: var(--muted); }
+  .badge-winner { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(255,209,102,.3); }
+  .empty-state { text-align: center; padding: 2.5rem 0; color: var(--muted); font-size: 13px; }
+  .empty-state .icon { font-size: 28px; margin-bottom: 8px; }
+
+  /* Admin */
+  .admin-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  .admin-title {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    letter-spacing: .1em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .admin-title::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+  }
+  .admin-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .admin-row input {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--mono);
+    padding: 9px 12px;
+    outline: none;
+    width: 160px;
+    transition: border-color .2s;
+  }
+  .admin-row input:focus { border-color: rgba(255,255,255,.3); }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background: var(--text);
+    color: var(--bg);
+    font-size: 13px;
+    font-family: var(--mono);
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 99px;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+    pointer-events: none;
+    z-index: 99;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 400px) {
+    .quota-row { grid-template-columns: 1fr 1fr; }
+    .input-row { flex-direction: column; }
+    .admin-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">PROP<span>FIRM</span> LOTTERY</div>
+  <div class="date-pill" id="top-date"></div>
+</div>
+
+<div class="page">
+  <div class="hero">
+    <h1>每日帳號<br><em>抽獎活動</em></h1>
+    <p>系統隨機分配號碼 · 每日限 100 人 · 公開透明</p>
+  </div>
+
+  <div class="quota-row">
+    <div class="stat">
+      <div class="stat-val" id="s-total">100</div>
+      <div class="stat-label">每日名額</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-joined">0</div>
+      <div class="stat-label">已報名</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val accent" id="s-left">100</div>
+      <div class="stat-label">剩餘名額</div>
+    </div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-row">
+      <span>今日報名進度</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="prog-track">
+      <div class="prog-fill" id="prog-fill"></div>
+    </div>
+  </div>
+
+  <div class="winner-banner" id="winner-banner">
+    <div class="label">🏆 TODAY'S WINNER</div>
+    <div class="wname" id="w-name"></div>
+    <div class="wnum" id="w-num"></div>
+  </div>
+
+  <div class="form-card">
+    <h2>REGISTER</h2>
+    <div class="input-row">
+      <input type="text" id="inp-name" placeholder="輸入名字或 LINE ID" maxlength="20">
+      <button class="btn btn-accent" onclick="register()">報名</button>
+    </div>
+    <p class="hint">系統自動分配 0–100 隨機號碼，每人限報一次</p>
+  </div>
+
+  <div>
+    <div class="list-header">
+      <span>TODAY'S ENTRIES</span>
+      <span id="list-count">0 / 100</span>
+    </div>
+    <div id="list-area">
+      <div class="empty-state">
+        <div class="icon">🎯</div>
+        還沒有人報名，快來搶第一！
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <div class="admin-title">管理員區域</div>
+    <div class="admin-row">
+      <input type="password" id="adm-pw" placeholder="管理員密碼">
+      <button class="btn btn-ghost" onclick="adminDraw()">🎰 抽出得獎者</button>
+      <button class="btn btn-red" onclick="adminReset()">重置今日</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const LIMIT = 100;
+const ADMIN_PW = 'propfirm2026';
+const TODAY = new Date().toISOString().slice(0,10);
+
+const gk = k => `pf_${TODAY}_${k}`;
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(gk('entries')) || '[]'); }
+  catch { return []; }
+}
+function save(arr) { localStorage.setItem(gk('entries'), JSON.stringify(arr)); }
+function getWinner() { return localStorage.getItem(gk('winner')); }
+function setWinner(n) { localStorage.setItem(gk('winner'), n); }
+
+function toast(msg, dur = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function render() {
+  const entries = load();
+  const joined = entries.length;
+  const left = Math.max(0, LIMIT - joined);
+  const pct = Math.round(joined / LIMIT * 100);
+  const winner = getWinner();
+
+  document.getElementById('s-joined').textContent = joined;
+  document.getElementById('s-left').textContent = left;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('list-count').textContent = `${joined} / ${LIMIT}`;
+
+  const wb = document.getElementById('winner-banner');
+  if (winner) {
+    const we = entries.find(e => e.name === winner);
+    wb.style.display = 'block';
+    document.getElementById('w-name').textContent = winner;
+    document.getElementById('w-num').textContent = `號碼 #${we ? we.num : '—'}`;
+  } else {
+    wb.style.display = 'none';
+  }
+
+  const la = document.getElementById('list-area');
+  if (!entries.length) {
+    la.innerHTML = '<div class="empty-state"><div class="icon">🎯</div>還沒有人報名，快來搶第一！</div>';
+    return;
+  }
+  la.innerHTML = entries.map((e, i) => {
+    const isW = e.name === winner;
+    return `<div class="entry${isW ? ' is-winner' : ''}">
+      <div class="num-box">${e.num}</div>
+      <div class="entry-info">
+        <div class="entry-name">${e.name}</div>
+        <div class="entry-time">${e.time}</div>
+      </div>
+      <div class="badge ${isW ? 'badge-winner' : 'badge-rank'}">${isW ? '🏆 得獎' : '#' + (i+1)}</div>
+    </div>`;
+  }).join('');
+}
+
+function register() {
+  const name = document.getElementById('inp-name').value.trim();
+  if (!name) { toast('請輸入名字或 LINE ID'); return; }
+  const entries = load();
+  if (entries.length >= LIMIT) { toast('今日名額已滿！'); return; }
+  if (entries.find(e => e.name === name)) { toast('你已經報名過囉！'); return; }
+  const used = new Set(entries.map(e => e.num));
+  let num;
+  do { num = Math.floor(Math.random() * 101); } while (used.has(num));
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  entries.push({ name, num, time });
+  save(entries);
+  document.getElementById('inp-name').value = '';
+  toast(`✅ 報名成功！你的號碼是 ${num}`);
+  render();
+}
+
+function adminDraw() {
+  if (document.getElementById('adm-pw').value !== ADMIN_PW) { toast('密碼錯誤'); return; }
+  const entries = load();
+  if (!entries.length) { toast('還沒有人報名'); return; }
+  const w = entries[Math.floor(Math.random() * entries.length)];
+  setWinner(w.name);
+  toast(`🎉 得獎者：${w.name}，號碼 ${w.num}`, 4000);
+  render();
+}
+
+function adminReset() {
+  if (document.getElementById('adm-pw').value !== ADMIN_PW) { toast('密碼錯誤'); return; }
+  if (!confirm('確定要清空今日所有報名資料？')) return;
+  localStorage.removeItem(gk('entries'));
+  localStorage.removeItem(gk('winner'));
+  toast('已重置');
+  render();
+}
+
+// Init date
+const d = new Date();
+document.getElementById('top-date').textContent =
+  d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+
+render();
+</script>
+</body>
+</html>

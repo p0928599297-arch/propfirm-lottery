@@ -33,6 +33,22 @@ body::before{content:'';position:fixed;top:-20%;left:50%;transform:translateX(-5
 .logo{font-family:var(--serif);font-size:19px;font-weight:700;color:var(--gold-light);letter-spacing:.06em}
 .logo span{color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:400;margin-left:6px}
 .date-chip{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--gold-border);border-radius:99px;padding:4px 12px;letter-spacing:.05em}
+
+/* Sci-fi marquee */
+.marquee-wrap{position:relative;background:#000;border-bottom:1px solid var(--gold-border);overflow:hidden;height:36px;display:flex;align-items:center}
+.marquee-wrap::before,.marquee-wrap::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none}
+.marquee-wrap::before{left:0;background:linear-gradient(to right,#000,transparent)}
+.marquee-wrap::after{right:0;background:linear-gradient(to left,#000,transparent)}
+.marquee-label{font-family:var(--mono);font-size:9px;font-weight:700;color:#000;background:var(--gold);padding:3px 10px;letter-spacing:.15em;white-space:nowrap;z-index:3;flex-shrink:0;height:100%;display:flex;align-items:center}
+.marquee-track{display:flex;align-items:center;white-space:nowrap;will-change:transform}
+.marquee-track.animate{animation:marqueeScroll linear infinite}
+@keyframes marqueeScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.marquee-item{display:inline-flex;align-items:center;gap:6px;margin-right:40px;font-family:var(--mono);font-size:11px;color:var(--gold-light);letter-spacing:.06em}
+.marquee-item .m-num{display:inline-block;background:rgba(201,168,76,0.15);border:1px solid var(--gold-border2);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--gold);font-weight:700}
+.marquee-item .m-sep{color:var(--muted);margin:0 2px}
+.marquee-scan{position:absolute;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,transparent,var(--gold-light),transparent);opacity:.5;animation:scan 3s linear infinite;z-index:1}
+@keyframes scan{from{left:-2px}to{left:100%}}
+
 .page{position:relative;z-index:1;max-width:620px;margin:0 auto;padding:3rem 1.25rem 5rem}
 
 .hero{text-align:center;margin-bottom:3rem;opacity:0;transform:translateY(20px);animation:fadeUp .7s ease .1s forwards}
@@ -125,6 +141,16 @@ body::before{content:'';position:fixed;top:-20%;left:50%;transform:translateX(-5
   <div class="date-chip" id="top-date"></div>
 </div>
 
+<div class="marquee-wrap" id="marquee-wrap">
+  <div class="marquee-label">LIVE ▶</div>
+  <div style="overflow:hidden;flex:1;position:relative">
+    <div class="marquee-scan"></div>
+    <div class="marquee-track" id="marquee-track">
+      <span class="marquee-item" style="color:var(--muted);letter-spacing:.1em">— 等待報名中 —</span>
+    </div>
+  </div>
+</div>
+
 <div class="page">
   <div class="hero">
     <div class="eyebrow">DAILY LOTTERY</div>
@@ -174,7 +200,7 @@ body::before{content:'';position:fixed;top:-20%;left:50%;transform:translateX(-5
     <div class="admin-row">
       <input class="adm-inp" type="password" id="adm-pw" placeholder="管理員密碼">
       <button class="btn-ghost" onclick="adminDraw()">🎰 抽出得獎者</button>
-      <button class="btn-red" onclick="adminReset()">重置今日</button>
+      <button class="btn-red" onclick="adminReset()">開新一輪</button>
     </div>
   </div>
 </div>
@@ -182,12 +208,14 @@ body::before{content:'';position:fixed;top:-20%;left:50%;transform:translateX(-5
 <div id="toast"></div>
 
 <script>
-const LIMIT=100,ADMIN_PW='propfirm2026',TODAY=new Date().toISOString().slice(0,10);
-const gk=k=>`pf_${TODAY}_${k}`;
-function load(){try{return JSON.parse(localStorage.getItem(gk('entries'))||'[]')}catch{return[]}}
-function save(a){localStorage.setItem(gk('entries'),JSON.stringify(a))}
-function getWinner(){return localStorage.getItem(gk('winner'))}
-function setWinner(n){localStorage.setItem(gk('winner'),n)}
+const LIMIT=100,ADMIN_PW='propfirm2026';
+const KEYS={entries:'pf_entries',winner:'pf_winner',round:'pf_round'};
+function load(){try{return JSON.parse(localStorage.getItem(KEYS.entries)||'[]')}catch{return[]}}
+function save(a){localStorage.setItem(KEYS.entries,JSON.stringify(a))}
+function getWinner(){return localStorage.getItem(KEYS.winner)}
+function setWinner(n){localStorage.setItem(KEYS.winner,n)}
+function getRound(){return parseInt(localStorage.getItem(KEYS.round)||'1')}
+function nextRound(){localStorage.setItem(KEYS.round,getRound()+1)}
 
 function toast(msg,dur=2500){
   const t=document.getElementById('toast');
@@ -226,6 +254,29 @@ function launchConfetti(){
   draw();
 }
 
+function renderMarquee(entries){
+  const track=document.getElementById('marquee-track');
+  if(!entries.length){
+    track.style.animation='none';
+    track.innerHTML='<span class="marquee-item" style="color:var(--muted);letter-spacing:.1em">— 等待報名中 —</span>';
+    return;
+  }
+  const items=entries.map(e=>`<span class="marquee-item">
+    <span class="m-num">#${e.num}</span>
+    <span class="m-sep">◈</span>
+    ${e.name}
+    <span class="m-sep">·</span>
+    <span style="color:var(--muted);font-size:10px">${e.time}</span>
+  </span>`).join('');
+  // duplicate for seamless loop
+  track.innerHTML=items+items;
+  const totalW=track.scrollWidth/2;
+  const dur=Math.max(10,totalW/60);
+  track.style.animation='none';
+  track.offsetWidth;
+  track.style.animation=`marqueeScroll ${dur}s linear infinite`;
+}
+
 function render(){
   const entries=load(),joined=entries.length,left=Math.max(0,LIMIT-joined);
   const pct=Math.round(joined/LIMIT*100),winner=getWinner();
@@ -234,6 +285,7 @@ function render(){
   document.getElementById('prog-fill').style.width=pct+'%';
   document.getElementById('prog-pct').textContent=pct+'%';
   document.getElementById('list-count').textContent=`${joined} / ${LIMIT}`;
+  document.getElementById('top-date').textContent=`第 ${getRound()} 輪 · `+new Date().toLocaleDateString('zh-TW',{month:'long',day:'numeric'});
   const wb=document.getElementById('winner-banner');
   if(winner){
     const we=entries.find(e=>e.name===winner);
@@ -242,6 +294,7 @@ function render(){
     document.getElementById('w-num').textContent=`號碼 #${we?we.num:'—'}`;
   } else wb.style.display='none';
   const la=document.getElementById('list-area');
+  renderMarquee(entries);
   if(!entries.length){la.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div>還沒有人報名，快來搶第一！</div>';return;}
   la.innerHTML=entries.map((e,i)=>{
     const isW=e.name===winner;
@@ -279,13 +332,12 @@ function adminDraw(){
 
 function adminReset(){
   if(document.getElementById('adm-pw').value!==ADMIN_PW){toast('密碼錯誤');return;}
-  if(!confirm('確定要清空今日所有報名資料？'))return;
-  localStorage.removeItem(gk('entries'));localStorage.removeItem(gk('winner'));
-  toast('已重置');render();
+  if(!confirm('確定開始新一輪？目前名單與得獎者將清空。'))return;
+  localStorage.removeItem(KEYS.entries);localStorage.removeItem(KEYS.winner);
+  nextRound();
+  toast(`✦ 第 ${getRound()} 輪開始！`);render();
 }
 
-const d=new Date();
-document.getElementById('top-date').textContent=d.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'});
 render();
 </script>
 </body>
